@@ -51,7 +51,7 @@ def scrape(url,j):
     opts = Options()
     opts.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; WOW64)")
     opts.add_argument('--headless')
-    driver = webdriver.Chrome('/home/admin1987/Django/scraper/chromedriver', chrome_options=opts)
+    driver = webdriver.Chrome('/home/admin1987/Python-project/scraper/chromedriver', chrome_options=opts)
 
     workbook = xlsxwriter.Workbook('result.xlsx')
     worksheet = workbook.add_worksheet()
@@ -89,6 +89,7 @@ def scrape(url,j):
         worksheet.write('F' + str(k), row[6])
     workbook.close()
 def start():
+    print("running Start function !")
     c.execute("DELETE FROM result")
     conn.commit()
     scrape('https://www.takealot.com/seller/monthly-madness?sort=BestSelling%20Descending&rows=120&start=0&backend=arj-fbye-zz-fla-fcenax&filter=Available:true&sellers=785161',1)
@@ -121,17 +122,18 @@ def start():
     smtp.sendmail(send_from, send_to, msg.as_string())
     smtp.quit()
 
-start()
+# start()
 # schedule.every().hour.do(start)
-# schedule.every().day.at('12:40').do(start)
+schedule.every().day.at('08:10').do(start)
+schedule.every().day.at('15:10').do(start)
 # schedule.every().day.at('13:20').do(start)
 # schedule.every().day.at('13:50').do(start)
 # schedule.every().day.at('15:25').do(start)
 # schedule.every().day.at('16:00').do(start)
 # schedule.every().day.at('16:30').do(start)
 
-# while True:
-#   #Run pending scheduler events
-#   schedule.run_pending()
-#   #Wait 60 seconds to check the trigger again
-#   time.sleep(60)
+while True:
+  #Run pending scheduler events
+  schedule.run_pending()
+  #Wait 60 seconds to check the trigger again
+  time.sleep(60)
