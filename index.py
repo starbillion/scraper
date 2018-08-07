@@ -2,7 +2,7 @@ from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 import time
-import xlsxwriter
+import os
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
@@ -13,6 +13,7 @@ import sqlite3
 import schedule
 conn = sqlite3.connect('db.sqlite3')
 c=conn.cursor()
+os.remove("result.csv")
 def product_link(content,driver,j):
     if content.find('ul',attrs={'class':'product-list group'}):
         products=content.find('ul',attrs={'class':'product-list group'}).findAll('li')
@@ -50,18 +51,14 @@ def product_link(content,driver,j):
 def scrape(url,j):
     # opts = Options()
     # opts.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; WOW64)")
-    # opts.add_argument('--headless')
-    # driver = webdriver.Chrome('/home/admin1987/Python-project/scraper/chromedriver', chrome_options=opts)
-    driver = webdriver.PhantomJS(executable_path="/home/admin1987/Python-project/scraper/phantomjs")
+    # opts.add_argument("--headless")
+    # driver = webdriver.Chrome('/home/ec2-user/python/scraper/chromedriver', chrome_options=opts)
+    # driver = webdriver.Chrome('chromedriver.exe')
+    driver = webdriver.PhantomJS(executable_path="/home/ubuntu/python/scraper/phantomjs")
+    csvFileName = 'result.csv'
+    csvfile = open(csvFileName, "a+")
+    csvfile.write("Product Title,Seller 1,Price,Seller 2,Price,Link\n")
 
-    workbook = xlsxwriter.Workbook('result.xlsx')
-    worksheet = workbook.add_worksheet()
-    worksheet.write('A1', 'Product Title')
-    worksheet.write('B1', 'Seller 1')
-    worksheet.write('C1', 'Price')
-    worksheet.write('D1', 'Seller 2')
-    worksheet.write('E1', 'Price')
-    worksheet.write('F1', 'Link')
     driver.get(url)
     time.sleep(10)
     html=driver.execute_script("return document.body.innerHTML;")
@@ -82,21 +79,18 @@ def scrape(url,j):
     k=1
     for row in c.execute("SELECT * FROM result ORDER BY seller1 "):
         k=k+1
-        worksheet.write('A' + str(k), row[1])
-        worksheet.write('B' + str(k), row[2])
-        worksheet.write('C' + str(k), row[3])
-        worksheet.write('D' + str(k), row[4])
-        worksheet.write('E' + str(k), row[5])
-        worksheet.write('F' + str(k), row[6])
-    workbook.close()
+
+
+        csvfile.write(str(row[1])+','+str(row[2])+','+str(row[3])+','+str(row[4])+','+str(row[5])+','+str(row[6])+'\n')
+    csvfile.close()
+
 def start():
-    print("running Start function !")
     c.execute("DELETE FROM result")
     conn.commit()
     scrape('https://www.takealot.com/seller/monthly-madness?sort=BestSelling%20Descending&rows=120&start=0&backend=arj-fbye-zz-fla-fcenax&filter=Available:true&sellers=785161',1)
     send_from='weidongjackzhang@outlook.com'
-    #send_to='Matthew@thirdwavesa.co.za'
-    send_to = 'star1987lei@gmail.com'
+    send_to='Matthew@thirdwavesa.co.za'
+    # send_to = 'star1987lei@gmail.com'
     subject='Hello, your csv!'
     text='Your csv file was updated'
     username = 'weidongjackzhang@outlook.com'
@@ -109,7 +103,7 @@ def start():
     msg.attach(MIMEText(text))
 
     part = MIMEBase('application', "octet-stream")
-    part.set_payload(open("result.xlsx", "rb").read())
+    part.set_payload(open("result.csv", "rb").read())
     encoders.encode_base64(part)
     part.add_header('Content-Disposition', 'attachment; filename="result.csv"')
     msg.attach(part)
@@ -123,18 +117,12 @@ def start():
     smtp.sendmail(send_from, send_to, msg.as_string())
     smtp.quit()
 
-start()
-# schedule.every().hour.do(start)
-# schedule.every().day.at('08:10').do(start)
-# schedule.every().day.at('15:10').do(start)
-# schedule.every().day.at('13:20').do(start)
-# schedule.every().day.at('13:50').do(start)
-# schedule.every().day.at('15:25').do(start)
-# schedule.every().day.at('16:00').do(start)
-# schedule.every().day.at('16:30').do(start)
+# start()
 
-# while True:
-#   #Run pending scheduler events
-#   schedule.run_pending()
-#   #Wait 60 seconds to check the trigger again
-#   time.sleep(60)
+schedule.every().day.at('06:10').do(start)
+schedule.every().day.at('13:10').do(start)
+while True:
+  #Run pending scheduler events
+  schedule.run_pending()
+  #Wait 60 seconds to check the trigger again
+  time.sleep(60)
